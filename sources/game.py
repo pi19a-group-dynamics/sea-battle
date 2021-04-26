@@ -1,6 +1,7 @@
 import os
 import pygame
 from sources.globals import *
+from sources.field import Field
 
 
 class Game:
@@ -10,14 +11,20 @@ class Game:
         pygame.display.set_caption('Sea battle')
         self.clock = pygame.time.Clock()
 
+        self.field = Field((0, 0))
+        self.field2 = Field((400, 0))
+
 
     def update(self):
-        pass
+        self.field.update()
+        self.field2.update()
 
     
     def render(self):
         self.window.fill((0, 0, 0))
         ''' draw '''
+        self.field.draw(self.window)
+        self.field2.draw(self.window)
         pygame.display.update()
 
 
