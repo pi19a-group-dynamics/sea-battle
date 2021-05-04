@@ -1,4 +1,10 @@
 WINDOW_SIZE = (800, 600)
+FPS = 30
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-FPS = 30
+
+MENU = 1
+SINGLE_GAME = 2
+WIN = 3
+LOSE = 4

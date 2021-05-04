@@ -13,10 +13,16 @@ class Menu:
 
         # menu buttons
         frame1_rect = pygame.Rect((10, WINDOW_SIZE[1] / 2), self.frame_size)
-        frame2_rect = pygame.Rect((10, WINDOW_SIZE[1] / 2 + 108), self.frame_size)
-        self.frame1_text = Text("Start game", WHITE, (45, WINDOW_SIZE[1] / 2 + 10), 80)
-        self.frame2_text = Text("Exit", WHITE, (115, WINDOW_SIZE[1] / 2 + 120), 80)
+        frame2_rect = pygame.Rect((10, WINDOW_SIZE[1] / 2 + 138), self.frame_size)
+        self.frame1_text = Text("Single game", (225, 225, 170), (26, WINDOW_SIZE[1] / 2 + 8), 85)
+        self.frame2_text = Text("Exit", (225, 225, 180), (115, WINDOW_SIZE[1] / 2 + 150), 85)
         self.frame_rects = [frame1_rect, frame2_rect]
+
+        # menu tick sound
+        pygame.init()
+        self.played = -1
+        self.tick_sound = pygame.mixer.Sound('sources/sound/menu_tick.wav')
+
         self.mouse = (0, 0)
 
 
@@ -25,20 +31,31 @@ class Menu:
         
         if event.type == pygame.MOUSEBUTTONUP and self.frame_rects[0].collidepoint(self.mouse):
             if event.button == 1:
-                return 'start'
+                return SINGLE_GAME
         if event.type == pygame.MOUSEBUTTONUP and self.frame_rects[1].collidepoint(self.mouse):
             if event.button == 1:
                 exit()
         
-        return 'menu'
+        return MENU
 
 
     def draw(self, window):
-        for rect in self.frame_rects:
-            if rect.collidepoint(self.mouse):
-                window.blit(self.selected_frame, rect)
+        not_selected = 0
+        buttons_count = len(self.frame_rects)
+
+        for i in range(buttons_count):
+            button = self.frame_rects[i]
+            if button.collidepoint(self.mouse):
+                window.blit(self.selected_frame, button)
+                if self.played != i:
+                    self.tick_sound.play()
+                    self.played = i
             else:
-                window.blit(self.frame, rect)
+                not_selected += 1
+                window.blit(self.frame, button)
+        
+        if not_selected == buttons_count:
+            self.played = -1
 
         self.frame1_text.draw(window)
         self.frame2_text.draw(window)
