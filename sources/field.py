@@ -12,6 +12,52 @@ class Field:
         self.ships_count = 0
         self.x_cell = 0
         self.y_cell = 0
+    
+
+    def set_ship(self, ship):
+        ship_len = int(ship[0])
+        right = True if (ship[1] == 'r') else False 
+
+        for i in range(ship_len):
+            try:
+                if right and (self.field[self.x_cell + i][self.y_cell] != '0' or self.x_cell + i == 11): return
+                if not right and (self.field[self.x_cell][self.y_cell + i] != '0' or self.y_cell + i == 11): return
+            except: return
+
+        if self.field[self.x_cell][self.y_cell] == '0':
+            for i in range(1, ship_len):
+                if right: self.field[self.x_cell + i][self.y_cell] = '#'
+                else: self.field[self.x_cell][self.y_cell + i] = '#'
+            
+            for i in range(ship_len):
+                if right:
+                    self.field[self.x_cell + i][self.y_cell - 1] = '*'
+                    self.field[self.x_cell + i][self.y_cell + 1] = '*'
+                else:
+                    self.field[self.x_cell - 1][self.y_cell + i] = '*'
+                    self.field[self.x_cell + 1][self.y_cell + i] = '*'
+            
+            if right:
+                self.field[self.x_cell - 1][self.y_cell - 1] = '*'
+                self.field[self.x_cell - 1][self.y_cell] = '*'
+                self.field[self.x_cell - 1][self.y_cell + 1] = '*'
+                self.field[self.x_cell + ship_len][self.y_cell - 1] = '*'
+                self.field[self.x_cell + ship_len][self.y_cell] = '*'
+                self.field[self.x_cell + ship_len][self.y_cell + 1] = '*'
+            else:
+                self.field[self.x_cell - 1][self.y_cell - 1] = '*'
+                self.field[self.x_cell][self.y_cell - 1] = '*'
+                self.field[self.x_cell + 1][self.y_cell - 1] = '*'
+                self.field[self.x_cell - 1][self.y_cell + ship_len] = '*'
+                self.field[self.x_cell][self.y_cell + ship_len] = '*'
+                self.field[self.x_cell + 1][self.y_cell + ship_len] = '*'
+            
+            self.field[self.x_cell][self.y_cell] = ship
+            '''print('\n')
+            for i in range(len(self.field)):
+                for j in range(len(self.field[0])):
+                    print(self.field[j][i], end='')
+                print()'''
 
 
     def mouse_update(self):
@@ -24,12 +70,14 @@ class Field:
             # LMB
             if mouse_click[0]:
                 if self.in_field() and self.ships_count < 20:
-                    self.field[self.x_cell][self.y_cell] = '1r'
+                    self.set_ship('1r')
             
             # RMB
             if pygame.mouse.get_pressed()[2]:
-                if self.in_field() and self.field[self.x_cell][self.y_cell] == '1r':
-                    self.field[self.x_cell][self.y_cell] = '0'
+                if self.in_field() and self.ships_count < 20:
+                    self.set_ship('2d')
+                #if self.in_field() and self.field[self.x_cell][self.y_cell] == '1':
+                #    self.field[self.x_cell][self.y_cell] = '0'
 
 
     def update(self):
