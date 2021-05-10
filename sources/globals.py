@@ -1,10 +1,12 @@
-WINDOW_SIZE = (800, 600)
-FPS = 30
-
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
 MENU = 1
 SINGLE_GAME = 2
-WIN = 3
-LOSE = 4
+PLACEMENT_SINGLE_GAME = 3
+WIN = 4
+LOSE = 5
+
+GAME_STATE = [MENU]
+
+SETTINGS = {'window_size': (800, 600), 'fps': 30}
