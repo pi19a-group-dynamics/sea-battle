@@ -44,7 +44,7 @@ class Game:
         pygame.mixer.music.play(-1)
         
         # fields
-        self.field = Field((38, 129))
+        self.field = Field((38, 129), is_player_field=True)
         self.field2 = Field((418, 129))
 
         # available ships
@@ -56,7 +56,7 @@ class Game:
         self.backgrounds_update()
             
         if GAME_STATE[0] == PLACEMENT_SINGLE_GAME:
-            self.field.update(is_player_field=True)
+            self.field.update()
             self.field2.update()
 
     
@@ -104,6 +104,13 @@ class Game:
             if event.type == pygame.QUIT:
                 exit()
 
+            if event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 2:
+                    if self.field.dir == 'r':
+                        self.field.dir = 'd'
+                    else:
+                        self.field.dir = 'r'
+
             old_state = GAME_STATE[0]
             GAME_STATE[0] = self.ui.update(event)
             
@@ -129,5 +136,5 @@ class Game:
             self.end_clock = 0
 
         self.end2_frame += 1
-        if self.end2_frame == 84 and GAME_STATE[0] == LOSE:
+        if self.end2_frame == 84:
             self.end2_frame = 0

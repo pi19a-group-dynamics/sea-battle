@@ -2,12 +2,13 @@ import pygame
 
 
 class Field:
-    def __init__(self, offset):
+    def __init__(self, offset, is_player_field=False):
         self.offset = offset
         self.field_image = pygame.image.load('sources/images/field.png')
         self.ships = [pygame.image.load(f'sources/images/ships/{i}.png') for i in range(1, 5)]
         self.pick_ships = [pygame.image.load(f'sources/images/ships/pick{i}.png') for i in range(1, 5)]
         self.select_image = pygame.image.load('sources/images/select.png')
+        self.arrow_image = pygame.image.load('sources/images/arrow.png')
         
         self.field = [['0' for i in range(12)] for i in range(12)]
         self.available_ships = ['4', '3', '2', '1']
@@ -18,9 +19,11 @@ class Field:
                                 pygame.Rect(52, 542, 94, 32),
                                 pygame.Rect(52, 494, 125, 32)]
         
+        self.is_player_field = is_player_field
         self.ships_count = 0
         self.x_cell = 0
         self.y_cell = 0
+        self.dir = 'r'
     
 
     def set_ship(self, x, y, ship, recover=False):
@@ -113,7 +116,7 @@ class Field:
                 # set ship
                 count = int(self.available_ships[self.selected_ship - 1])
                 if self.in_field() and self.field[self.x_cell][self.y_cell] == '0' and count > 0:
-                    if self.set_ship(self.x_cell, self.y_cell, str(self.selected_ship) + 'r'):
+                    if self.set_ship(self.x_cell, self.y_cell, str(self.selected_ship) + self.dir):
                         self.dec_available_ships(self.selected_ship)
                 # choose ship
                 for i in range(len(self.pick_ships_rect)):
@@ -126,8 +129,8 @@ class Field:
                     self.del_ship(self.x_cell, self.y_cell)
 
 
-    def update(self, is_player_field=False):
-            if is_player_field:
+    def update(self):
+            if self.is_player_field:
                 self.mouse_update()
 
 
@@ -135,18 +138,28 @@ class Field:
         # draw field
         window.blit(self.field_image, self.offset)
         
+        # draw arrow
+        if self.is_player_field:
+            arrow_pos = (0, 0)
+            self.arrow = pygame.transform.rotate(self.arrow_image, 90) if self.dir == 'd' else self.arrow_image
+            if self.dir == 'd':
+                arrow_pos = (self.offset[0] + 8, self.offset[1] + 2)
+            if self.dir == 'r':
+                arrow_pos = (self.offset[0] + 2, self.offset[1] + 8)
+            window.blit(self.arrow, arrow_pos)
+
         # draw select frame
-        if self.in_field(): 
-            window.blit(self.select_image, (self.offset[0] + self.x_cell * 32 - self.x_cell, 
+        if self.in_field():
+            window.blit(self.select_image, (self.offset[0] + self.x_cell * 32 - self.x_cell,
                                             self.offset[1] + self.y_cell * 32 - self.y_cell))
 
         # draw ships
         for i in range(11):
             for j in range(11):
-                try: 
+                try:
                     ship_type = int(self.field[i][j][0])
                     right = True if (self.field[i][j][1] == 'r') else False
-                except: continue  
+                except: continue
                 
                 ship_img = pygame.transform.rotate(self.ships[ship_type - 1], -90) if right else self.ships[ship_type - 1]
                 
