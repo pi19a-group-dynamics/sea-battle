@@ -8,5 +8,6 @@ WIN = 4
 LOSE = 5
 
 GAME_STATE = [MENU]
+PLAYER_TURN = [True]
 
 SETTINGS = {'window_size': (800, 600), 'fps': 30}

@@ -1,15 +1,19 @@
+from sources.globals import *
 import pygame
 
 
 class Field:
     def __init__(self, offset, is_player_field=False):
         self.offset = offset
-        self.field_image = pygame.image.load('sources/images/field.png')
+        self.field_image = pygame.image.load('sources/images/fields/field.png')
         self.ships = [pygame.image.load(f'sources/images/ships/{i}.png') for i in range(1, 5)]
         self.pick_ships = [pygame.image.load(f'sources/images/ships/pick{i}.png') for i in range(1, 5)]
-        self.select_image = pygame.image.load('sources/images/select.png')
-        self.arrow_image = pygame.image.load('sources/images/arrow.png')
+        self.select_image = pygame.image.load('sources/images/fields/select.png')
+        self.hit_image = pygame.image.load('sources/images/fields/hit.png')
+        self.miss_image = pygame.image.load('sources/images/fields/miss.png')
+        self.arrow_image = pygame.image.load('sources/images/fields/arrow.png')
         
+        self.hits = [['0' for i in range(12)] for i in range(12)]
         self.field = [['0' for i in range(12)] for i in range(12)]
         self.available_ships = ['4', '3', '2', '1']
         self.selected_ship = int(self.available_ships[3])
@@ -24,6 +28,12 @@ class Field:
         self.x_cell = 0
         self.y_cell = 0
         self.dir = 'r'
+
+        # sounds
+        self.hit_sound = pygame.mixer.Sound('sources/sounds/hit.mp3')
+        self.hit_sound.set_volume(0.5)
+        self.miss_sound = pygame.mixer.Sound('sources/sounds/miss.mp3')
+        self.miss_sound.set_volume(0.1)
     
 
     def set_ship(self, x, y, ship, recover=False):
@@ -104,7 +114,76 @@ class Field:
                     self.set_ship(i, j, self.field[i][j], recover=True)
 
 
-    def mouse_update(self):
+    def hit(self, x, y):
+        if self.hits[x][y] in ['1', '2', '3'] or len(self.hits[x][y]) == 2:
+            return False
+
+        if self.field[x][y] in ['0', '*']:
+            self.hits[x][y] = '2'
+            return True
+        
+        if len(self.field[x][y]) == 2:
+            self.hits[x][y] = self.field[x][y]
+        elif self.field[x][y] == '#':
+            self.hits[x][y] = '1'
+        
+            i = 0
+            j = 0
+            dir = 0
+            if self.field[x - 1][y] != '*':
+                dir = 'l'
+            if self.field[x][y - 1] != '*':
+                dir = 'u'
+            while self.field[x - i][y - j] == '#':
+                if dir == 'l':
+                    i += 1
+                else:
+                    j += 1
+            x -= i
+            y -= j
+        
+        check_count = 0
+        count = int(self.field[x][y][0])
+        dir = self.field[x][y][1]
+
+        for i in range(count):
+            if dir == 'r':
+                if self.hits[x + i][y] == '1' or len(self.hits[x + i][y]) == 2: 
+                    check_count += 1
+            else:
+                if self.hits[x][y + i] == '1' or len(self.hits[x][y + i]) == 2: 
+                    check_count += 1
+        
+        if check_count == count:
+            for i in range(count):
+                if dir == 'r':
+                    self.hits[x + i][y - 1] = '2'
+                    self.hits[x + i][y + 1] = '2'
+                else:
+                    self.hits[x - 1][y + i] = '2'
+                    self.hits[x + 1][y + i] = '2'
+            
+            if dir == 'r':
+                self.hits[x - 1][y - 1] = '2'
+                self.hits[x - 1][y] = '2'
+                self.hits[x - 1][y + 1] = '2'
+                self.hits[x + count][y - 1] = '2'
+                self.hits[x + count][y] = '2'
+                self.hits[x + count][y + 1] = '2'
+            else:
+                self.hits[x - 1][y - 1] = '2'
+                self.hits[x][y - 1] = '2'
+                self.hits[x + 1][y - 1] = '2'
+                self.hits[x - 1][y + count] = '2'
+                self.hits[x][y + count] = '2'
+                self.hits[x + 1][y + count] = '2'
+
+            self.hits[x][y] = '3'
+        
+        return True
+
+
+    def placement_mouse_update(self):
         m_x, m_y = pygame.mouse.get_pos()
         self.x_cell = (m_x - self.offset[0] + m_x // 32 % 14) // 32
         self.y_cell = (m_y - self.offset[1] + m_y // 32 % 14) // 32
@@ -124,46 +203,94 @@ class Field:
                         self.selected_ship = i + 1
             
             # RMB
-            if pygame.mouse.get_pressed()[2]:
+            if mouse_click[2]:
                 if self.in_field():
                     self.del_ship(self.x_cell, self.y_cell)
 
 
+    def hit_mouse_update(self):
+        m_x, m_y = pygame.mouse.get_pos()
+        self.x_cell = (m_x - self.offset[0] + m_x // 32 % 14) // 32
+        self.y_cell = (m_y - self.offset[1] + m_y // 32 % 14) // 32
+
+        mouse_click = pygame.mouse.get_pressed()
+        if mouse_click:
+            # LMB
+            if mouse_click[0] and self.in_field() and PLAYER_TURN[0]:
+                if self.hit(self.x_cell, self.y_cell):
+                    if self.hits[self.x_cell][self.y_cell] in ['1', '3'] or len(self.hits[self.x_cell][self.y_cell]) == 2:
+                        self.hit_sound.play()
+                        if self.win(self.hits):
+                                GAME_STATE[0] = WIN
+                        return
+                    PLAYER_TURN[0] = False
+                    pygame.time.set_timer(pygame.USEREVENT, 2000, True)
+                    self.miss_sound.play()
+
+
     def update(self):
-            if self.is_player_field:
-                self.mouse_update()
+        if self.is_player_field and GAME_STATE[0] != SINGLE_GAME:
+            self.placement_mouse_update()
+
+        elif not self.is_player_field and GAME_STATE[0] == SINGLE_GAME:
+            self.hit_mouse_update()
 
 
     def draw(self, window):
         # draw field
         window.blit(self.field_image, self.offset)
         
-        # draw arrow
         if self.is_player_field:
-            arrow_pos = (0, 0)
-            self.arrow = pygame.transform.rotate(self.arrow_image, 90) if self.dir == 'd' else self.arrow_image
-            if self.dir == 'd':
-                arrow_pos = (self.offset[0] + 8, self.offset[1] + 2)
-            if self.dir == 'r':
-                arrow_pos = (self.offset[0] + 2, self.offset[1] + 8)
-            window.blit(self.arrow, arrow_pos)
+            # draw arrow
+            if self.is_player_field and GAME_STATE[0] == PLACEMENT_SINGLE_GAME:
+                arrow_pos = (0, 0)
+                self.arrow = pygame.transform.rotate(self.arrow_image, 90) if self.dir == 'd' else self.arrow_image
+                if self.dir == 'd':
+                    arrow_pos = (self.offset[0] + 8, self.offset[1] + 2)
+                if self.dir == 'r':
+                    arrow_pos = (self.offset[0] + 2, self.offset[1] + 8)
+                window.blit(self.arrow, arrow_pos)
 
         # draw select frame
         if self.in_field():
             window.blit(self.select_image, (self.offset[0] + self.x_cell * 32 - self.x_cell,
                                             self.offset[1] + self.y_cell * 32 - self.y_cell))
 
-        # draw ships
-        for i in range(11):
-            for j in range(11):
-                try:
+        if self.is_player_field:
+            # draw ships
+            for i in range(1, 11):
+                for j in range(1, 11):
+                    if len(self.field[i][j]) == 2:
+                        ship_type = int(self.field[i][j][0])
+                        right = True if (self.field[i][j][1] == 'r') else False
+                    
+                        ship_img = pygame.transform.rotate(self.ships[ship_type - 1], -90) if right else self.ships[ship_type - 1]
+                        window.blit(ship_img, (self.offset[0] + i * 32 - i, self.offset[1] + j * 32 - j))
+
+        # draw hits
+        for i in range(1, 11):
+            for j in range(1, 11):
+                if self.hits[i][j] == '1' or len(self.hits[i][j]) == 2:
+                    window.blit(self.hit_image, (self.offset[0] + i * 32 - i + 1, self.offset[1] + j * 32 - j + 1))
+                elif self.hits[i][j] == '2':
+                    window.blit(self.miss_image, (self.offset[0] + i * 32 - i + 1, self.offset[1] + j * 32 - j + 1))
+                
+                if self.hits[i][j] == '3':
                     ship_type = int(self.field[i][j][0])
                     right = True if (self.field[i][j][1] == 'r') else False
-                except: continue
                 
-                ship_img = pygame.transform.rotate(self.ships[ship_type - 1], -90) if right else self.ships[ship_type - 1]
-                
-                window.blit(ship_img, (self.offset[0] + i * 32 - i, self.offset[1] + j * 32 - j))
+                    ship_img = pygame.transform.rotate(self.ships[ship_type - 1], -90) if right else self.ships[ship_type - 1]
+                    window.blit(ship_img, (self.offset[0] + i * 32 - i, self.offset[1] + j * 32 - j))
+                    window.blit(self.hit_image, (self.offset[0] + i * 32 - i + 1, self.offset[1] + j * 32 - j + 1))
+
+
+    def win(self, hits):
+        ships_count = 0
+        for i in range(len(hits)):
+            for j in range(len(hits[0])):
+                if self.hits[i][j] == '3':
+                    ships_count += 1
+        return ships_count == 10
 
 
     def inc_available_ships(self, i):

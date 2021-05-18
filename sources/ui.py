@@ -12,41 +12,42 @@ class UI:
         self.title_string = Text(150, "Sea Battle", (133, 44, 250), (10, 0))
 
         # frames buttons
-        self.frame = pygame.image.load('sources/images/frames/menu_frame1.png')
-        self.selected_frame = pygame.image.load('sources/images/frames/menu_frame2.png')
+        self.frame = pygame.image.load('sources/images/buttons/menu1.png')
+        self.selected_frame = pygame.image.load('sources/images/buttons/menu2.png')
 
         # back buttons
-        self.back_button = pygame.image.load('sources/images/back_button1.png')
-        self.selected_back_button = pygame.image.load('sources/images/back_button2.png')
+        self.back_button = pygame.image.load('sources/images/buttons/back1.png')
+        self.selected_back_button = pygame.image.load('sources/images/buttons/back2.png')
 
         # music buttons
         self.music_play = True
-        self.music_button = pygame.image.load('sources/images/music_button1.png')
-        self.selected_music_button = pygame.image.load('sources/images/music_button2.png')
+        self.music_button = pygame.image.load('sources/images/buttons/music1.png')
+        self.selected_music_button = pygame.image.load('sources/images/buttons/music2.png')
 
         # music buttons
-
-        self.rules_button = pygame.image.load('sources/images/rules_button1.png')
-        self.selected_rules_button = pygame.image.load('sources/images/rules_button2.png')
+        self.rules_button = pygame.image.load('sources/images/buttons/rules1.png')
+        self.selected_rules_button = pygame.image.load('sources/images/buttons/rules2.png')
 
         # buttons frames and texts
-        frame1_rect = pygame.Rect((10, SETTINGS['window_size'][1] / 2), self.frame.get_size())
-        frame2_rect = pygame.Rect((10, SETTINGS['window_size'][1] / 2 + 138), self.frame.get_size())
+        frame1_rect = pygame.Rect((10, SETTINGS['window_size'][1] / 2 - 100), self.frame.get_size())
+        frame2_rect = pygame.Rect((10, SETTINGS['window_size'][1] / 2 + 38), self.frame.get_size())
+        frame3_rect = pygame.Rect((10, SETTINGS['window_size'][1] / 2 + 176), self.frame.get_size())
         self.music_rect = pygame.Rect((747, 3), self.music_button.get_size())
         self.back_rect = pygame.Rect((10, 10), self.music_button.get_size())
         self.rules_rect = pygame.Rect((747, 56), self.rules_button.get_size())
-        self.frame1_text = Text(85, "Single game", (225, 225, 170), (26, SETTINGS['window_size'][1] / 2 + 8))
-        self.frame2_text = Text(85, "Exit", (225, 225, 180), (115, SETTINGS['window_size'][1] / 2 + 150))
+        self.frame1_text = Text(85, "Singleplayer", (225, 225, 170), (28, SETTINGS['window_size'][1] / 2 - 94))
+        self.frame2_text = Text(85, "Multiplayer", (225, 225, 170), (44, SETTINGS['window_size'][1] / 2 + 44))
+        self.frame3_text = Text(85, "Exit", (225, 225, 170), (120, SETTINGS['window_size'][1] / 2 + 184))
 
         # rects
-        self.frame_rects = [frame1_rect, frame2_rect, self.rules_rect]
-        self.buttons = [self.frame, self.frame, self.rules_button]
-        self.selected_buttons = [self.selected_frame, self.selected_frame, self.selected_rules_button]
+        self.frame_rects = [frame1_rect, frame2_rect, frame3_rect,self.rules_rect]
+        self.buttons = [self.frame, self.frame, self.frame, self.rules_button]
+        self.selected_buttons = [self.selected_frame, self.selected_frame, self.selected_frame, self.selected_rules_button]
 
         # menu tick sound
         pygame.init()
         self.played = -1
-        self.tick_sound = pygame.mixer.Sound('sources/sound/menu_tick.wav')
+        self.tick_sound = pygame.mixer.Sound('sources/sounds/menu_tick.wav')
 
         self.mouse = (0, 0)
 
@@ -60,7 +61,7 @@ class UI:
                 if event.button == 1:
                     return PLACEMENT_SINGLE_GAME
             # exit click
-            if event.type == pygame.MOUSEBUTTONUP and self.frame_rects[1].collidepoint(self.mouse):
+            if event.type == pygame.MOUSEBUTTONUP and self.frame_rects[2].collidepoint(self.mouse):
                 if event.button == 1:
                     exit()
             # music click
@@ -76,7 +77,7 @@ class UI:
                 if event.button == 1:
                     webbrowser.open('https://github.com/pi19a-group-dynamics/sea-battle/wiki/Морской-бой')       
         
-        elif GAME_STATE[0] in [PLACEMENT_SINGLE_GAME, SINGLE_GAME]:
+        elif GAME_STATE[0] in [PLACEMENT_SINGLE_GAME, SINGLE_GAME, WIN, LOSE]:
             # back button click
             if event.type == pygame.MOUSEBUTTONUP and self.back_rect.collidepoint(self.mouse):
                 if event.button == 1:
@@ -118,9 +119,11 @@ class UI:
 
             self.frame1_text.draw(self.window)
             self.frame2_text.draw(self.window)
+            self.frame3_text.draw(self.window)
+            
 
         # Other
-        elif GAME_STATE[0] in [PLACEMENT_SINGLE_GAME, SINGLE_GAME]:
+        elif GAME_STATE[0] in [PLACEMENT_SINGLE_GAME, SINGLE_GAME, WIN, LOSE]:
             if self.back_rect.collidepoint(self.mouse):
                 self.window.blit(self.selected_back_button, self.back_rect)
                 if not self.played:
