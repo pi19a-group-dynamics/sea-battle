@@ -208,7 +208,7 @@ class Field:
                     self.del_ship(self.x_cell, self.y_cell)
 
 
-    def hit_mouse_update(self):
+    def singleplayer_hit_mouse_update(self):
         m_x, m_y = pygame.mouse.get_pos()
         self.x_cell = (m_x - self.offset[0] + m_x // 32 % 14) // 32
         self.y_cell = (m_y - self.offset[1] + m_y // 32 % 14) // 32
@@ -221,42 +221,74 @@ class Field:
                     if self.hits[self.x_cell][self.y_cell] in ['1', '3'] or len(self.hits[self.x_cell][self.y_cell]) == 2:
                         self.hit_sound.play()
                         if self.win(self.hits):
-                                GAME_STATE[0] = WIN
+                            GAME_STATE[0] = END_GAME
                         return
                     PLAYER_TURN[0] = False
                     pygame.time.set_timer(pygame.USEREVENT, 2000, True)
                     self.miss_sound.play()
 
 
-    def update(self):
-        if self.is_player_field and GAME_STATE[0] != SINGLE_GAME:
+    def multiplayer_hit_mouse_update(self, client=None, server=None):
+        m_x, m_y = pygame.mouse.get_pos()
+        self.x_cell = (m_x - self.offset[0] + m_x // 32 % 14) // 32
+        self.y_cell = (m_y - self.offset[1] + m_y // 32 % 14) // 32
+
+        mouse_click = pygame.mouse.get_pressed()
+        if mouse_click:
+            # LMB
+            if mouse_click[0] and self.in_field() and PLAYER_TURN[0]:
+                if self.hit(self.x_cell, self.y_cell):
+                    if client:
+                        client.do_shot(self.x_cell, self.y_cell)
+                    elif server:
+                        server.do_shot(self.x_cell, self.y_cell)
+                    
+                    if self.hits[self.x_cell][self.y_cell] in ['1', '3'] or len(self.hits[self.x_cell][self.y_cell]) == 2:
+                        self.hit_sound.play()
+                        if self.win(self.hits):
+                            GAME_STATE[0] = END_GAME
+                        return
+                    
+                    if client:
+                        client.turn = False
+                    elif server:
+                        server.turn = False
+                    
+                    self.miss_sound.play()
+
+
+    def update(self, client=None, server=None):
+        if self.is_player_field and GAME_STATE[0] not in [SINGLEPLAYER, SERVER_MULTIPLAYER, CLIENT_MULTIPLAYER]:
             self.placement_mouse_update()
 
-        elif not self.is_player_field and GAME_STATE[0] == SINGLE_GAME:
-            self.hit_mouse_update()
+        elif not self.is_player_field and GAME_STATE[0] == SINGLEPLAYER:
+            self.singleplayer_hit_mouse_update()
+        
+        elif not self.is_player_field and GAME_STATE[0] in [SERVER_MULTIPLAYER, CLIENT_MULTIPLAYER]:
+            self.multiplayer_hit_mouse_update(client, server)
 
 
     def draw(self, window):
         # draw field
         window.blit(self.field_image, self.offset)
         
-        if self.is_player_field:
-            # draw arrow
-            if self.is_player_field and GAME_STATE[0] == PLACEMENT_SINGLE_GAME:
-                arrow_pos = (0, 0)
-                self.arrow = pygame.transform.rotate(self.arrow_image, 90) if self.dir == 'd' else self.arrow_image
-                if self.dir == 'd':
-                    arrow_pos = (self.offset[0] + 8, self.offset[1] + 2)
-                if self.dir == 'r':
-                    arrow_pos = (self.offset[0] + 2, self.offset[1] + 8)
-                window.blit(self.arrow, arrow_pos)
+        # draw arrow
+        if self.is_player_field and GAME_STATE[0] not in [SINGLEPLAYER, SERVER_MULTIPLAYER, WAITING, CLIENT_MULTIPLAYER]:
+            arrow_pos = (0, 0)
+            self.arrow = pygame.transform.rotate(self.arrow_image, 90) if self.dir == 'd' else self.arrow_image
+            if self.dir == 'd':
+                arrow_pos = (self.offset[0] + 8, self.offset[1] + 2)
+            if self.dir == 'r':
+                arrow_pos = (self.offset[0] + 2, self.offset[1] + 8)
+            window.blit(self.arrow, arrow_pos)
 
-        # draw select frame
-        if self.in_field():
-            window.blit(self.select_image, (self.offset[0] + self.x_cell * 32 - self.x_cell,
-                                            self.offset[1] + self.y_cell * 32 - self.y_cell))
+        if GAME_STATE[0] != END_GAME:
+            # draw select frame
+            if self.in_field():
+                window.blit(self.select_image, (self.offset[0] + self.x_cell * 32 - self.x_cell,
+                                                self.offset[1] + self.y_cell * 32 - self.y_cell))
 
-        if self.is_player_field:
+        if self.is_player_field or GAME_STATE[0] == END_GAME:
             # draw ships
             for i in range(1, 11):
                 for j in range(1, 11):
