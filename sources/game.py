@@ -78,6 +78,8 @@ class Game:
         self.server = None
         self.client = None
 
+        self.saved = False
+
 
     def update(self):
         self.backgrounds_update()
@@ -110,14 +112,62 @@ class Game:
 
         if GAME_STATE[0] == WIN:
             self.window.blit(self.end_backgrounds[self.end_frame], (0, 0))
-            self.textwin = Text(130, "You won", (0, 0, 255), (260, 260))
-            self.textwin.draw(self.window)
+            
+            if not self.saved:
+                try:
+                    file = open('sources/stats')
+                    self.wins, self.defeats = map(int, file.read().split())
+                    file.close()
+                except:
+                    self.wins, self.defeats = 0, 0
+                    file = open('sources/stats', 'w')
+                    file.write('0 0')
+                    file.close()
+                
+                self.wins += 1
+
+                file = open('sources/stats', 'w')
+                file.write(f'{self.wins} {self.defeats}')
+                file.close()
+
+                self.saved = True
+
+            self.win_text = Text(130, "You won", (0, 0, 255), (260, 260))
+            self.stat1_text = Text(70, "Wins: " + str(self.wins), WHITE, (0, 490))
+            self.stat2_text = Text(70, "Defeats: " + str(self.defeats), WHITE, (0, 540))
+            self.win_text.draw(self.window)
+            self.stat1_text.draw(self.window)
+            self.stat2_text.draw(self.window)
         
         if GAME_STATE[0] == LOSE:
             self.window.blit(self.end2_extra, (0, 0))
             self.window.blit(self.end2_backgrounds[self.end2_frame], (144, 156))
-            self.textwin = Text(130, "You lost", (0, 225, 150), (260, 430))
-            self.textwin.draw(self.window)
+
+            if not self.saved:
+                try:
+                    file = open('sources/stats')
+                    self.wins, self.defeats = map(int, file.read().split())
+                    file.close()
+                except:
+                    self.wins, self.defeats = 0, 0
+                    file = open('sources/stats', 'w')
+                    file.write('0 0')
+                    file.close()
+                
+                self.defeats += 1
+
+                file = open('sources/stats', 'w')
+                file.write(f'{self.wins} {self.defeats}')
+                file.close()
+
+                self.saved = True
+            
+            self.lose_text = Text(130, "You lost", (0, 225, 150), (260, 430))
+            self.stat1_text = Text(70, "Wins: " + str(self.wins), WHITE, (0, 490))
+            self.stat2_text = Text(70, "Defeats: " + str(self.defeats), WHITE, (0, 540))
+            self.lose_text.draw(self.window)
+            self.stat1_text.draw(self.window)
+            self.stat2_text.draw(self.window)
 
         # draw ui
         self.ui.draw()
@@ -257,6 +307,7 @@ class Game:
                     self.field.available_ships = ['4', '3', '2', '1']
                     self.field.selected_ship = int(self.field.available_ships[3])
                     self.win = True
+                    self.saved = False
                     self.close_connections()
                 
                 # from menu to game
@@ -304,7 +355,7 @@ class Game:
             if event.type == pygame.USEREVENT:
                 if GAME_STATE[0] == SINGLEPLAYER:
                     if self.bot.turn():
-                        pygame.time.set_timer(pygame.USEREVENT, 2000, True)
+                        pygame.time.set_timer(pygame.USEREVENT, 500, True)
                         self.field.hit_sound.play()
                         if self.field.win(self.field2.hits):
                             self.win = False

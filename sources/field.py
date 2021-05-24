@@ -224,7 +224,7 @@ class Field:
                             GAME_STATE[0] = END_GAME
                         return
                     PLAYER_TURN[0] = False
-                    pygame.time.set_timer(pygame.USEREVENT, 2000, True)
+                    pygame.time.set_timer(pygame.USEREVENT, 500, True)
                     self.miss_sound.play()
 
 
@@ -273,7 +273,7 @@ class Field:
         window.blit(self.field_image, self.offset)
         
         # draw arrow
-        if self.is_player_field and GAME_STATE[0] not in [SINGLEPLAYER, SERVER_MULTIPLAYER, WAITING, CLIENT_MULTIPLAYER]:
+        if self.is_player_field and GAME_STATE[0] not in [SINGLEPLAYER, SERVER_MULTIPLAYER, WAITING, CLIENT_MULTIPLAYER, WIN, LOSE, END_GAME]:
             arrow_pos = (0, 0)
             self.arrow = pygame.transform.rotate(self.arrow_image, 90) if self.dir == 'd' else self.arrow_image
             if self.dir == 'd':
