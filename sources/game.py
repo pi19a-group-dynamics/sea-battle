@@ -104,7 +104,7 @@ class Game:
         self.window.blit(self.backgrounds[self.bg_frame], (0, 0))
         
         if GAME_STATE[0] == END_GAME:
-            pygame.time.set_timer(pygame.USEREVENT + 1, 5000, True)
+            pygame.time.set_timer(pygame.USEREVENT + 1, 5, True)
 
             # draw fields
             self.field.draw(self.window)
